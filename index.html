@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cambridge Stage 9 Math Diagnostic Assessment</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #64748b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    .card { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    h1 { color: var(--primary-dark); font-size: 1.8rem; margin-bottom: 10px; }
+    h2 { font-size: 1.3rem; margin-bottom: 15px; color: #334155; }
+    
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input[type="text"], input[type="email"] { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+    
+    .btn { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; }
+    .btn:hover { background: var(--primary-dark); }
+    
+    .header-bar { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 10px; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); z-index: 100; margin-bottom: 25px; border: 1px solid var(--border); }
+    .timer { font-size: 1.2rem; font-weight: bold; color: var(--warning); background: #fee2e2; padding: 6px 12px; border-radius: 6px; }
+    
+    .question-block { border-bottom: 1px solid var(--border); padding-bottom: 25px; margin-bottom: 25px; }
+    .question-code { font-size: 0.85rem; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-weight: 600; display: inline-block; margin-bottom: 8px; }
+    .question-text { font-weight: 600; font-size: 1.05rem; margin-bottom: 12px; }
+    
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+    
+    .option-label { display: flex; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .option-label:hover { background: #f1f5f9; }
+    .option-label input { margin-right: 10px; }
+    
+    .status-msg { display: none; padding: 12px; margin-top: 15px; border-radius: 6px; text-align: center; font-weight: bold; }
+    .status-msg.success { background: #dcfce7; color: #166534; display: block; }
+    .status-msg.sending { background: #e0f2fe; color: #075985; display: block; }
+
+    .result-section { margin-top: 20px; }
+    .skill-list { list-style: none; padding: 0; }
+    .skill-item { padding: 10px 14px; margin-bottom: 8px; border-radius: 6px; display: flex; align-items: center; font-size: 0.95rem; }
+    .skill-mastered { background: #dcfce7; color: #14532d; border-left: 4px solid var(--success); }
+    .skill-focus { background: #fee2e2; color: #7f1d1d; border-left: 4px solid var(--warning); }
+    
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Setup Screen -->
+    <div id="start-screen" class="card">
+      <h1>Cambridge Stage 9 Math Diagnostic Assessment</h1>
+      <p style="margin-bottom: 20px; color: #64748b;">Duration: 45 Minutes | Total Questions: 24</p>
+      
+      <div class="form-group">
+        <label for="student-name">Student Full Name</label>
+        <input type="text" id="student-name" placeholder="Enter your full name" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="teacher-email">Teacher Email (Optional)</label>
+        <input type="email" id="teacher-email" placeholder="teacher@school.com">
+      </div>
+      
+      <button class="btn" onclick="startTest()">Start Assessment</button>
+    </div>
+
+    <!-- Exam Screen -->
+    <div id="exam-screen" class="hidden">
+      <div class="header-bar">
+        <div><strong>Student:</strong> <span id="display-student-name"></span></div>
+        <div class="timer" id="timer">45:00</div>
+      </div>
+      
+      <form id="quiz-form" class="card">
+        <div id="questions-container"></div>
+        <button type="button" class="btn" onclick="submitTest()">Submit Assessment</button>
+      </form>
+    </div>
+
+    <!-- Results Dashboard -->
+    <div id="result-screen" class="hidden card">
+      <h1>Diagnostic Results</h1>
+      <p style="font-size: 1.1rem; margin-bottom: 20px;">
+        Score: <strong id="score-text"></strong> (<span id="score-percent"></span>%)
+      </p>
+      
+      <div id="submission-status" class="status-msg"></div>
+
+      <div class="result-section">
+        <h2>Mastered Skills</h2>
+        <ul id="mastered-list" class="skill-list"></ul>
+      </div>
+
+      <div class="result-section" style="margin-top: 25px;">
+        <h2>Skills Needing Practice</h2>
+        <ul id="weak-list" class="skill-list"></ul>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Configured Google Script Endpoint
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHptYdwy2QfdxnupxGpfz50uPoWHJRny8IURAFmAJU3VrIKKg5wXkLnNj5o2-x_8S6/exec";
+
+    const questionsData = [
+      { id: 1, code: "9Ni.01", topic: "Rational & Irrational Numbers", text: "Which of the following numbers is irrational?", options: ["√16", "0.333...", "√12", "5/8"], correct: 2 },
+      { id: 2, code: "9Ni.04", topic: "Surd Estimation", text: "Estimate the value of √45 to the nearest whole number.", options: ["6", "7", "8", "9"], correct: 1 },
+      { id: 3, code: "9Ni.03", topic: "Standard Form", text: "Express 0.00045 in standard form.", options: ["4.5 × 10⁻⁴", "4.5 × 10⁻³", "45 × 10⁻⁵", "4.5 × 10⁴"], correct: 0 },
+      { id: 4, code: "9Ni.02", topic: "Index Laws", text: "Simplify: (2a³b²) × (4a⁻¹b³)", options: ["8a²b⁵", "6a²b⁵", "8a⁴b⁶", "8a³b⁵"], correct: 0 },
+      { id: 5, code: "9Ae.01", topic: "Algebraic Substitution", text: "Evaluate 3x² - 2y when x = -2 and y = 5.", options: ["2", "22", "-2", "7"], correct: 0 },
+      { id: 6, code: "9Ae.03", topic: "Constructing Expressions", text: "A square has a side length of (x + 3). Write an expression for its area.", options: ["x² + 6x + 9", "x² + 9", "4x + 12", "x² + 3x + 9"], correct: 0 },
+      { id: 7, code: "9Ae.02", topic: "Expanding Linear Expressions", text: "Expand and simplify: (x + 4)(x - 3)", options: ["x² + x - 12", "x² - x - 12", "x² + 7x - 12", "x² - 12"], correct: 0 },
+      { id: 8, code: "9Ae.02", topic: "Simplifying Algebraic Fractions", text: "Simplify: (6x³y) / (2xy²)", options: ["(3x²)/y", "3x²y", "(3x)/y", "4x²y"], correct: 0 },
+      { id: 9, code: "9Ae.04", topic: "Deriving & Changing Formula Subject", text: "If v² = u² + 2as, rearrange to make 'a' the subject.", options: ["a = (v² - u²) / 2s", "a = (v - u) / 2s", "a = (v² + u²) / 2s", "a = v² / 2s - u"], correct: 0 },
+      { id: 10, code: "9Np.01", topic: "Multiplying/Dividing by Powers of 10", text: "Calculate: 3.45 ÷ 10⁻²", options: ["345", "0.0345", "34.5", "0.345"], correct: 0 },
+      { id: 11, code: "9Nf.06", topic: "Decimal Calculations", text: "Calculate: 0.12 × 0.4", options: ["0.048", "0.48", "0.0048", "4.8"], correct: 0 },
+      { id: 12, code: "9Nf.05", topic: "Compound Percentages", text: "An investment of $500 grows by 10% per year for 2 years. Find the final amount.", options: ["$605", "$600", "$550", "$610"], correct: 0 },
+      { id: 13, code: "9Np.02", topic: "Upper & Lower Bounds", text: "A length is recorded as 8 cm rounded to the nearest cm. What is the lower bound?", options: ["7.5 cm", "7.0 cm", "7.9 cm", "8.4 cm"], correct: 0 },
+      { id: 14, code: "9Ae.05", topic: "Equations with Unknown Denominator", text: "Solve for x: 12 / x + 3 = 7", options: ["x = 3", "x = 4", "x = 2", "x = 6"], correct: 0 },
+      { id: 15, code: "9Ae.06", topic: "Simultaneous Equations", text: "Solve: 2x + y = 7 and x - y = 2", options: ["x = 3, y = 1", "x = 2, y = 3", "x = 4, y = -1", "x = 1, y = 5"], correct: 0 },
+      { id: 16, code: "9Ae.07", topic: "Linear Inequalities", text: "Solve the inequality: -3x + 4 < 10", options: ["x > -2", "x < -2", "x > 2", "x < 2"], correct: 0 },
+      { id: 17, code: "9Gg.09", topic: "Angle Properties", text: "In a triangle, two angles are 45° and 65°. Find the third angle.", options: ["70°", "80°", "90°", "60°"], correct: 0 },
+      { id: 18, code: "9Gg.07", topic: "Interior Angles of Polygons", text: "Calculate the sum of interior angles of a regular hexagon (6 sides).", options: ["720°", "540°", "360°", "1080°"], correct: 0 },
+      { id: 19, code: "9Gg.08", topic: "Exterior Angles of Polygons", text: "What is the exterior angle of a regular octagon (8 sides)?", options: ["45°", "60°", "135°", "30°"], correct: 0 },
+      { id: 20, code: "9Gg.10", topic: "Pythagoras' Theorem", text: "A right triangle has legs of 6 cm and 8 cm. Find the hypotenuse.", options: ["10 cm", "12 cm", "14 cm", "9 cm"], correct: 0 },
+      { id: 21, code: "9Ss.01", topic: "Data Collection & Sampling Methods", text: "Which sampling method is most appropriate to find the average opinion of students across different year groups in a large school?", options: ["Stratified random sample", "Convenience sample of close friends", "Selecting only the oldest students", "Sampling random adults on the street"], correct: 0 },
+      { id: 22, code: "9Ss.05", topic: "Data Interpretation & Inferences", text: "A scatter plot shows a strong positive correlation between ice cream sales and sunscreen sales. What is the best informal inference?", options: ["A lurking variable (sunny weather) drives both", "Ice cream causes people to buy sunscreen", "Sunscreen causes people to eat ice cream", "There is zero relationship"], correct: 0 },
+      { id: 23, code: "9Ss.02", topic: "Bias & Data Collection Issues", text: "A survey question asks: 'Don't you agree that math homework should be reduced?' What is the primary issue with this data collection?", options: ["It is a leading question", "It uses continuous data improperly", "It suffers from random rounding error", "It is a closed categorical question"], correct: 0 },
+      { id: 24, code: "9Ss.03", topic: "Representing Categorical & Continuous Data", text: "Which chart is most suitable for displaying continuous numerical data grouped into equal class intervals?", options: ["Histogram", "Bar chart", "Pie chart", "Pictogram"], correct: 0 }
+    ];
+
+    let timerInterval;
+    let timeRemaining = 45 * 60;
+    let preparedQuestions = [];
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function prepareQuestions() {
+      preparedQuestions = questionsData.map(q => {
+        const originalCorrectText = q.options[q.correct];
+        const shuffledOptions = shuffleArray([...q.options]);
+        const newCorrectIndex = shuffledOptions.indexOf(originalCorrectText);
+        return { ...q, shuffledOptions, newCorrectIndex };
+      });
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById("questions-container");
+      container.innerHTML = preparedQuestions.map((q, idx) => `
+        <div class="question-block">
+          <span class="question-code">[${q.code}] ${q.topic}</span>
+          <div class="question-text">Q${idx + 1}. ${q.text}</div>
+          <div class="options-grid">
+            ${q.shuffledOptions.map((opt, oIdx) => `
+              <label class="option-label">
+                <input type="radio" name="q${q.id}" value="${oIdx}">
+                ${opt}
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function startTest() {
+      const name = document.getElementById("student-name").value.trim();
+      if (!name) { alert("Please enter your name to begin."); return; }
+      
+      document.getElementById("display-student-name").innerText = name;
+      document.getElementById("start-screen").classList.add("hidden");
+      document.getElementById("exam-screen").classList.remove("hidden");
+      
+      prepareQuestions();
+      renderQuestions();
+      
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        const mins = Math.floor(timeRemaining / 60);
+        const secs = timeRemaining % 60;
+        document.getElementById("timer").innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          submitTest();
+        }
+      }, 1000);
+    }
+
+    function submitTest() {
+      clearInterval(timerInterval);
+      
+      const name = document.getElementById("student-name").value.trim();
+      const email = document.getElementById("teacher-email").value.trim();
+      
+      let score = 0;
+      let mastered = [];
+      let weak = [];
+      
+      preparedQuestions.forEach(q => {
+        const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+        if (selected && parseInt(selected.value) === q.newCorrectIndex) {
+          score++;
+          mastered.push(`[${q.code}] ${q.topic}`);
+        } else {
+          weak.push(`[${q.code}] ${q.topic}`);
+        }
+      });
+
+      const percentage = Math.round((score / preparedQuestions.length) * 100);
+
+      // Hide Exam, Show Dashboard
+      document.getElementById("exam-screen").classList.add("hidden");
+      document.getElementById("result-screen").classList.remove("hidden");
+      
+      document.getElementById("score-text").innerText = `${score} / ${preparedQuestions.length}`;
+      document.getElementById("score-percent").innerText = percentage;
+
+      document.getElementById("mastered-list").innerHTML = mastered.length ? 
+        mastered.map(item => `<li class="skill-item skill-mastered">✓ ${item}</li>`).join('') :
+        `<li class="skill-item">No skills mastered on this attempt.</li>`;
+        
+      document.getElementById("weak-list").innerHTML = weak.length ?
+        weak.map(item => `<li class="skill-item skill-focus">! ${item}</li>`).join('') :
+        `<li class="skill-item" style="background:#dcfce7;">Perfect score! No weak skills identified.</li>`;
+
+      // Auto-send to Google Drive via Apps Script
+      postResultsToGoogleDrive({
+        studentName: name,
+        teacherEmail: email,
+        scorePercent: percentage,
+        scoreRaw: score,
+        totalQuestions: preparedQuestions.length,
+        masteredSkills: mastered,
+        weakSkills: weak
+      });
+    }
+
+    function postResultsToGoogleDrive(payload) {
+      const statusEl = document.getElementById("submission-status");
+      statusEl.className = "status-msg sending";
+      statusEl.innerText = "Syncing results to Google Drive...";
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        statusEl.className = "status-msg success";
+        statusEl.innerText = "✓ Results successfully recorded in Google Drive!";
+      })
+      .catch(err => {
+        console.error("Submission error:", err);
+        statusEl.className = "status-msg";
+        statusEl.innerText = "Could not sync automatically. Results are displayed above.";
+      });
+    }
+  </script>
+</body>
+</html>
